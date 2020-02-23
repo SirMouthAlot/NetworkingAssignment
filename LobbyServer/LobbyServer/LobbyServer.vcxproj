@@ -138,6 +138,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChatData.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="ClientData.cpp" />
     <ClCompile Include="Convertable.cpp" />
@@ -150,6 +151,7 @@
     <ClCompile Include="Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChatData.h" />
     <ClInclude Include="Client.h" />
     <ClInclude Include="ClientData.h" />
     <ClInclude Include="Convertable.h" />

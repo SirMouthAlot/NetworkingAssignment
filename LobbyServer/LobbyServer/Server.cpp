@@ -61,8 +61,8 @@ void Server::RecvMsg()
 
 	switch ((MessageType)messType)
 	{
-
 	case MessageType::MSG_CONNECT:
+	{
 		//Check if this client is on the list, if not add it
 		client = new Client(clientAddr);
 
@@ -87,7 +87,9 @@ void Server::RecvMsg()
 		}
 
 		break;
+	}
 	case MessageType::MSG_DISCONNECT:
+	{
 		client = new Client(clientAddr);
 
 		//Find client on list
@@ -116,13 +118,93 @@ void Server::RecvMsg()
 			//Removes client from list
 			m_clients.erase(m_clients.begin() + clientNum);
 		}
-
-		
-
-
 		delete client;
 		client = nullptr;
 		break;
+	}
+	case MessageType::MSG_CHATREQUEST:
+	{
+		int idRequest;
+		int idChat;
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, &idRequest, &idChat, &messFlag);
+
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == idChat)
+				SendMsg(MessageType::MSG_CHATREQUEST, &Int(idRequest), *m_clients[i]);
+		}
+
+
+
+		break;
+	}
+	case MessageType::MSG_CHATRESPONSE:
+	{
+		int requesterID;
+		int response;
+
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, &requesterID, &response, &messFlag);
+
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == requesterID)
+				SendMsg(MessageType::MSG_CHATRESPONSE, &Bool((bool)response), *m_clients[i]);
+		}
+
+		break;
+	}
+	case MessageType::MSG_CHATSTRING:
+	{
+		int chatID;
+		char messMess[256];
+		memset(messMess, 0, 256);
+
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %i %[^\n]s %i", &messType, &chatID, messMess, 256, &messFlag);
+
+
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == chatID)
+				SendMsg(MessageType::MSG_CHATSTRING, &String(messMess), *m_clients[i]);
+		}
+
+		break;
+	}
+	/*case MessageType::MSG_GAMEREQUEST:
+	{
+		char messMess[30];
+		memset(messMess, 0, 30);
+
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+
+		break;
+	}
+	case MessageType::MSG_GAMERESPONSE:
+	{
+		char messMess[30];
+		memset(messMess, 0, 30);
+
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, messMess, 30, &messFlag);
+
+
+
+		break;
+	}
+	case MessageType::MSG_GAMEPOSITION:
+	{
+		char messMess[30];
+		memset(messMess, 0, 30);
+
+		int messFlag;
+		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+
+		break;
+	}*/
 	}
 
 	if ((MessageType)messType == MessageType::MSG_CONNECT && !onList)

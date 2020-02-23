@@ -11,6 +11,7 @@
 #include "String.h"
 #include "Vector.h"
 #include "ClientData.h"
+#include "ChatData.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
