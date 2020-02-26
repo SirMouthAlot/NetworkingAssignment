@@ -114,6 +114,8 @@ Convertable* Client::RecvMsg(MessageType& type)
 		//Adds new client
 		m_otherClients.push_back(newClient);
 
+		m_chatActivity.AddNew(newClient.m_clientID, newClient.m_username);
+
 		return nullptr;
 
 		break;
@@ -127,12 +129,9 @@ Convertable* Client::RecvMsg(MessageType& type)
 
 		sscanf_s(mess.c_str(), "%i %i %s", &messType, &temp, name, 90);
 
-		std::string str = std::to_string(temp);
-		str += " ";
-		str += std::string(name);
 
-		ClientData data;
-		data.SetValue(str);
+		std::string tempName = name;
+		ClientData data = ClientData(temp, tempName);
 
 		for (int i = 0; i < m_otherClients.size(); i++)
 		{
@@ -141,6 +140,8 @@ Convertable* Client::RecvMsg(MessageType& type)
 				//Removes client
 				m_otherClients.erase(m_otherClients.begin() + i);
 				m_otherClients.shrink_to_fit();
+
+				m_chatActivity.Remove(data.m_userNum);
 			}
 		}
 
@@ -162,13 +163,15 @@ Convertable* Client::RecvMsg(MessageType& type)
 	}
 	case MessageType::MSG_CHATRESPONSE:
 	{
+		int chatID;
+
 		int response;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %i", &messType, &response);
+		sscanf_s(mess.c_str(), "%i %i %i", &messType, &chatID, &response);
 
 		//Mess mess2 is the actual response to the request
-		return new Bool((bool)response);
+		return new ChatResponse(chatID, (bool)response);
 
 		break;
 	}
@@ -179,9 +182,9 @@ Convertable* Client::RecvMsg(MessageType& type)
 		memset(messMess, 0, 256);
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %[^\n]s", &messType, messMess, 256);
+		sscanf_s(mess.c_str(), "%i %i %[^\n]s", &messType, &chatID, messMess, 256);
 
-		return new String(messMess);
+		return new ChatMessage(chatID, messMess);
 
 		break;
 	}

@@ -25,7 +25,6 @@ std::string ChatRequest::ToString()
 	temp += std::to_string(m_requesterID);
 	temp += " ";
 	temp += std::to_string(m_chatID);
-
 	return temp;
 }
 
@@ -38,6 +37,8 @@ std::string ChatMessage::ToString()
 {
 	std::string temp;
 
+	temp += std::to_string(m_chatID);
+	temp += " ";
 	temp += m_message;
 	temp += "\n";
 
@@ -49,7 +50,7 @@ void ChatMessage::SetValue(std::string toConv)
 	char temp[256];
 	memset(temp, 0, 256);
 
-	sscanf_s(toConv.c_str(), "%[^\n]s", temp, 256);
+	sscanf_s(toConv.c_str(), "%i %[^\n]s", &m_chatID, temp, 256);
 
 	m_message = std::string(temp);
 }

@@ -162,13 +162,15 @@ Convertable* Client::RecvMsg(MessageType& type)
 	}
 	case MessageType::MSG_CHATRESPONSE:
 	{
+		int chatID;
+
 		int response;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %i", &messType, &response);
+		sscanf_s(mess.c_str(), "%i %i %i", &messType, &chatID, &response);
 
 		//Mess mess2 is the actual response to the request
-		return new Bool((bool)response);
+		return new ChatResponse(chatID, (bool)response);
 
 		break;
 	}
@@ -179,9 +181,9 @@ Convertable* Client::RecvMsg(MessageType& type)
 		memset(messMess, 0, 256);
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %[^\n]s", &messType, messMess, 256);
+		sscanf_s(mess.c_str(), "%i %i %[^\n]s", &messType, &chatID, messMess, 256);
 
-		return new String(messMess);
+		return new ChatMessage(chatID, messMess);
 
 		break;
 	}

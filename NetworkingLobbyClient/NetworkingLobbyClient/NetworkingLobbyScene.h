@@ -29,14 +29,6 @@ private:
 	int m_gamingWith = -1;
 	bool m_gameRequestSent = false;
 	bool m_gaming = false;
-
-	std::vector<std::string> m_chatLog;
-	int m_chattingWith = -1;
-	bool m_chatRequestReceived = false;
-	bool m_chatRequestSent = false;
-	bool m_chatAccepted = false;
-	bool m_chatRejected = false;
-	bool m_chatting = false;
 };
 
 #endif // !__NETWORKINGLOBBYSCENE_H__ 

@@ -146,11 +146,14 @@ void Server::RecvMsg()
 
 		int messFlag;
 		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, &requesterID, &response, &messFlag);
+		bool trash;
+
+		int chatID = FindClient(&Client(clientAddr), trash);
 
 		for (int i = 0; i < m_clients.size(); i++)
 		{
 			if (m_clients[i]->m_clientID == requesterID)
-				SendMsg(MessageType::MSG_CHATRESPONSE, &Bool((bool)response), *m_clients[i]);
+				SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(chatID, (bool)response), *m_clients[i]);
 		}
 
 		break;
@@ -165,10 +168,14 @@ void Server::RecvMsg()
 		sscanf_s(mess.c_str(), "%i %i %[^\n]s %i", &messType, &chatID, messMess, 256, &messFlag);
 
 
+		bool trash;
+
+		int requesterID = FindClient(&Client(clientAddr), trash);
+
 		for (int i = 0; i < m_clients.size(); i++)
 		{
 			if (m_clients[i]->m_clientID == chatID)
-				SendMsg(MessageType::MSG_CHATSTRING, &String(messMess), *m_clients[i]);
+				SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(requesterID, messMess), *m_clients[i]);
 		}
 
 		break;

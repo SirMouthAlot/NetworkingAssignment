@@ -70,23 +70,26 @@ void NetworkingLobbyScene::ReceiveMessages()
 			{
 				Int tempInt = *(Int*)temp;
 
-				m_chatRequestReceived = true;
-				m_chattingWith = tempInt.m_int;
+				int chatID = tempInt.m_int;
+
+				m_client.m_chatActivity.ReceiveRequest(chatID);
 			}
 			else if (type == MessageType::MSG_CHATRESPONSE)
 			{
-				Bool tempBool = *(Bool*)temp;
+				ChatResponse tempResponse = *(ChatResponse*)temp;
 
-				bool response = tempBool.m_bool;
+				bool response = tempResponse.m_response;
+				int chatID = tempResponse.m_requesterID;
 
-				//Setup accepted or rejected
-				(response) ? m_chatAccepted = true : m_chatRejected = true;
+				m_client.m_chatActivity.ReceiveResponse(chatID, response);
 			}
 			else if (type == MessageType::MSG_CHATSTRING)
 			{
-				String tempString = *(String*)temp;
+				ChatMessage tempMessage = *(ChatMessage*)temp;
 
-				m_chatLog.push_back(tempString.m_string);
+				int chatID = tempMessage.m_chatID;
+
+				m_client.m_chatActivity.ReceiveMessage(chatID, tempMessage.m_message);
 			}
 		}
 	}
@@ -155,21 +158,24 @@ void NetworkingLobbyScene::GUI()
 	{
 		for (int i = 0; i < m_client.m_otherClients.size(); i++)
 		{
-			std::string chatTitle = (m_chatRequestSent) ? "Request Sent" : "Chat";
+			int otherID = m_client.m_otherClients[i].m_clientID;
+
+			std::string chatTitle = (m_client.m_chatActivity.GetRequestSent(otherID)) ? "Request Sent" : "Chat";
 			std::string gameTitle = (m_gameRequestSent) ? "Request Sent" : "Game";
+			
 
 			//Prints out client and username
 			ImGui::Text("Client %i : %s %s", m_client.m_otherClients[i].m_clientID, m_client.m_otherClients[i].m_username.c_str(), PrintActivity::Return(m_client.m_otherClients[i].m_activity).c_str());
 			ImGui::SameLine();
 			if (ImGui::Button(chatTitle.c_str()))
 			{
-				if (!m_chatRequestSent)
+				if (!m_client.m_chatActivity.GetRequestSent(otherID))
 				{
 					//Sends a chat request
-					m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, m_client.m_otherClients[i].m_clientID), MessageFlags::NONE);
+					m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
 
-					m_chattingWith = m_client.m_otherClients[i].m_clientID;
-					m_chatRequestSent = true;
+					//Send chat request
+					m_client.m_chatActivity.SendRequest(otherID);
 				}
 			}
 			ImGui::SameLine();
@@ -181,61 +187,39 @@ void NetworkingLobbyScene::GUI()
 				}
 			}
 
-			if (m_chatRequestSent)
-			{
-				if (m_chatAccepted)
-				{
-					m_chatting = true;
-					m_chatAccepted = false;
-					m_chatRequestSent = false;
-				}
-				if (m_chatRejected)
-				{
-					//Cleanup after chat message stuffs
-					m_chattingWith = -1;
-					m_chatRequestSent = false;
-					m_chatting = false;
-					m_chatRejected = false;
-					m_chatAccepted = false;
-				}
-			}
-
 			//Did you receive a chat request?
-			if (m_chatRequestReceived)
+			if (m_client.m_chatActivity.GetRequestReceived(otherID))
 			{
 				ImGui::SameLine();
 				if (ImGui::Button("Accept Request"))
 				{
 					//Send accept response
-					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(m_chattingWith, true), MessageFlags::NONE);
+					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(otherID, true), MessageFlags::NONE);
 
-					m_chatting = true;
-
-					m_chatRequestReceived = false;
+					m_client.m_chatActivity.RespondRequest(otherID, true);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Reject Request"))
 				{
 					//Send reject response
-					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(m_chattingWith, false), MessageFlags::NONE);
+					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(otherID, false), MessageFlags::NONE);
 					
-					m_chatting = false;
-
-					m_chatRequestReceived = false;
+					m_client.m_chatActivity.RespondRequest(otherID, false);
 				}
 			}
 
 
 			//Create chat window
-			if (m_chatting)
+			if (m_client.m_chatActivity.GetCurrentlyChatting(otherID))
 			{
+				bool chatting = m_client.m_chatActivity.GetCurrentlyChatting(otherID);
 				//Create chat window
-				ImGui::Begin("Chat window", &m_chatting);
+				ImGui::Begin(m_client.m_chatActivity.GetChatName(otherID).c_str(), &chatting);
 
-				for (int i = 0; i < m_chatLog.size(); i++)
+				for (int i = 0; i < m_client.m_chatActivity.GetChatLog(otherID).size(); i++)
 				{
 					//Print out chat
-					ImGui::Text("%s", m_chatLog[i].c_str());
+					ImGui::Text("%s", m_client.m_chatActivity.GetChatLog(otherID)[i].c_str());
 				}
 
 				ImGui::Separator();
@@ -253,11 +237,16 @@ void NetworkingLobbyScene::GUI()
 				{
 					//Send the message
 					std::string message = m_client.m_username + ": " + std::string(buf_3);
-					m_client.SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(m_chattingWith, message), MessageFlags::NONE);
-					m_chatLog.push_back(message);
+					m_client.SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(otherID, message), MessageFlags::NONE);
+					m_client.m_chatActivity.AddMessage(otherID, message);
 					memset(buf_3, 0, BUF_LEN);
 				}
 				
+				if (ImGui::Button("End Chat"))
+				{
+					m_client.m_chatActivity.EndChat(otherID);
+				}
+
 				ImGui::End();
 			}
 			

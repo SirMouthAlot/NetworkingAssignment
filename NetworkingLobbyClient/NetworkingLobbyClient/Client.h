@@ -2,6 +2,7 @@
 #define __CLIENT_H__
 
 #include "NetworkingWrapper.h"
+#include <unordered_map>
 
 enum class MessageType
 {
@@ -24,6 +25,208 @@ enum class MessageFlags
 	BROADCAST_ALL,			//Broadcast to all clients connected to the server
 	BROADCAST_RELATED,		//Broadcast to only clients grouped with this client
 	NONE					//Do nothing
+};
+
+struct ChatActivity
+{
+	ChatActivity() { }
+
+	void AddNew(int chatID, std::string chatName)
+	{
+		if (chatLogs.find(chatID) == chatLogs.end())
+		{
+			chatBoxName.insert(std::pair<int, std::string>(chatID, chatName));
+			currentlyChatting.insert(std::pair<int, bool>(chatID, false));
+			requestsSent.insert(std::pair<int, bool>(chatID, false));
+			requestsReceived.insert(std::pair<int, bool>(chatID, false));
+
+			std::vector<std::string> newLog;
+			chatLogs.insert(std::pair<int, std::vector<std::string>>(chatID, newLog));
+		}
+	}
+
+	void Remove(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			chatBoxName.erase(chatID);
+			currentlyChatting.erase(chatID);
+			requestsSent.erase(chatID);
+			requestsReceived.erase(chatID);
+
+			chatLogs.erase(chatID);
+		}
+	}
+
+	void SendRequest(int chatID)
+	{
+		//If you can't find the chat id in our list
+		if (chatLogs.find(chatID) == chatLogs.end())
+		{
+			return;
+		}
+		requestsSent.at(chatID) = true;
+	}
+
+	void ReceiveRequest(int chatID)
+	{
+		if (chatLogs.find(chatID) == chatLogs.end())
+		{
+			return;
+		}
+		requestsReceived.at(chatID) = true;
+	}
+
+	void RespondRequest(int chatID, bool response)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			if (response)
+			{
+				currentlyChatting.at(chatID) = true;
+				requestsReceived.at(chatID) = false;
+				requestsSent.at(chatID) = false;
+			}
+			else
+			{
+				requestsReceived.at(chatID) = false;
+				requestsSent.at(chatID) = false;
+			}
+		}
+		else
+		{
+			printf("You messed up again...");
+		}
+	}
+
+	void ReceiveResponse(int chatID, bool response)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			if (response)
+			{
+				currentlyChatting.at(chatID) = true;
+				requestsReceived.at(chatID) = false;
+				requestsSent.at(chatID) = false;
+			}
+			else
+			{
+				requestsReceived.at(chatID) = false;
+				requestsSent.at(chatID) = false;
+			}
+		}
+		else
+		{
+			printf("You messed up again...");
+		}
+	}
+
+	void AddMessage(int chatID, std::string message)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			chatLogs.at(chatID).push_back(message);
+		}
+		else
+		{
+			printf("Shouldn't print this");
+		}
+	}
+	
+	void EndChat(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//Add message to log
+			currentlyChatting.at(chatID) = false;
+			requestsSent.at(chatID) = false;
+			requestsReceived.at(chatID) = false;
+		}
+	}
+
+	void ReceiveMessage(int chatID, std::string message)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//Add message to log
+			chatLogs.at(chatID).push_back(message);
+		}
+		else
+		{
+			printf("You messed up, this shouldn't be here.");
+		}
+	}
+
+	bool GetRequestSent(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return bool
+			return requestsSent.at(chatID);
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	bool GetRequestReceived(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return bool
+			return requestsReceived.at(chatID);
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	bool GetCurrentlyChatting(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return bool
+			return currentlyChatting.at(chatID);
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	std::vector<std::string> GetChatLog(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return chat
+			return chatLogs.at(chatID);
+		}
+		else
+		{
+			return std::vector<std::string>();
+		}
+	}
+
+	std::string GetChatName(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return chat name
+			return chatBoxName.at(chatID);
+		}
+		else
+		{
+			return "";
+		}
+	}
+
+	std::unordered_map<int, std::string> chatBoxName;
+	std::unordered_map<int, bool> currentlyChatting;
+	std::unordered_map<int, bool> requestsSent;
+	std::unordered_map<int, bool> requestsReceived;
+	std::unordered_map<int, std::vector<std::string>> chatLogs;
 };
 
 struct PrintActivity
@@ -91,6 +294,10 @@ public:
 
 	void PrintOtherClientData();
 	void ShutdownClient();
+
+
+
+	ChatActivity m_chatActivity;
 
 	int m_clientID = -1;
 	std::string m_username;
