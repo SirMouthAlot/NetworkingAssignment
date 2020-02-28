@@ -189,15 +189,18 @@ void NetworkingLobbyScene::GUI()
 			}
 			else
 			{
-				if (ImGui::Button(chatTitle.c_str()))
+				if (!m_client.m_chatActivity.GetCurrentlyChatting(otherID))
 				{
-					//if (!m_client.m_chatActivity.GetRequestSent(otherID))
+					if (ImGui::Button(std::string(chatTitle + "##" + std::to_string(i)).c_str()))
 					{
-						//Sends a chat request
-						m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
+						if (!m_client.m_chatActivity.GetRequestSent(otherID))
+						{
+							//Sends a chat request
+							m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
 
-						//Send chat request
-						m_client.m_chatActivity.SendRequest(otherID);
+							//Send chat request
+							m_client.m_chatActivity.SendRequest(otherID);
+						}
 					}
 				}
 			}
