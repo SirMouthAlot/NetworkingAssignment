@@ -121,7 +121,7 @@ void NetworkingLobbyScene::GUI()
 	{
 		ImGui::InputText("Input Username Here", buf, BUF_LEN, ImGuiInputTextFlags_CharsNoBlank);
 		ImGui::InputText("Input IP here", buf_2, BUF_LEN, ImGuiInputTextFlags_CharsNoBlank);
-	
+
 		if (ImGui::Button("Login"))
 		{
 			//Connects to server with IP and username
@@ -162,31 +162,11 @@ void NetworkingLobbyScene::GUI()
 
 			std::string chatTitle = (m_client.m_chatActivity.GetRequestSent(otherID)) ? "Request Sent" : "Chat";
 			std::string gameTitle = (m_gameRequestSent) ? "Request Sent" : "Game";
-			
+
 
 			//Prints out client and username
 			ImGui::Text("Client %i : %s %s", m_client.m_otherClients[i].m_clientID, m_client.m_otherClients[i].m_username.c_str(), PrintActivity::Return(m_client.m_otherClients[i].m_activity).c_str());
 			ImGui::SameLine();
-			if (ImGui::Button(chatTitle.c_str()))
-			{
-				if (!m_client.m_chatActivity.GetRequestSent(otherID))
-				{
-					//Sends a chat request
-					m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
-
-					//Send chat request
-					m_client.m_chatActivity.SendRequest(otherID);
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button(gameTitle.c_str()))
-			{
-				if (!m_gameRequestSent)
-				{
-					m_gameRequestSent = true;
-				}
-			}
-
 			//Did you receive a chat request?
 			if (m_client.m_chatActivity.GetRequestReceived(otherID))
 			{
@@ -203,8 +183,32 @@ void NetworkingLobbyScene::GUI()
 				{
 					//Send reject response
 					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(otherID, false), MessageFlags::NONE);
-					
+
 					m_client.m_chatActivity.RespondRequest(otherID, false);
+				}
+			}
+			else
+			{
+				if (ImGui::Button(chatTitle.c_str()))
+				{
+					//if (!m_client.m_chatActivity.GetRequestSent(otherID))
+					{
+						//Sends a chat request
+						m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
+
+						//Send chat request
+						m_client.m_chatActivity.SendRequest(otherID);
+					}
+				}
+			}
+
+			ImGui::SameLine();
+			//Game request stuffs
+			if (ImGui::Button(gameTitle.c_str()))
+			{
+				if (!m_gameRequestSent)
+				{
+					m_gameRequestSent = true;
 				}
 			}
 
@@ -224,24 +228,17 @@ void NetworkingLobbyScene::GUI()
 
 				ImGui::Separator();
 
-				static char buf_3[BUF_LEN];
-				if (chatInit == false)
-				{
-					memset(buf_3, 0, BUF_LEN);
-					chatInit = true;
-				}
-
-				ImGui::InputText("", buf_3, BUF_LEN);
+				ImGui::InputText("", m_client.m_chatActivity.GetChatBufRef(otherID), BUF_LEN);
 				ImGui::SameLine();
 				if (ImGui::Button("Send"))
 				{
 					//Send the message
-					std::string message = m_client.m_username + ": " + std::string(buf_3);
+					std::string message = m_client.m_username + ": " + std::string(m_client.m_chatActivity.GetChatBufRef(otherID));
 					m_client.SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(otherID, message), MessageFlags::NONE);
 					m_client.m_chatActivity.AddMessage(otherID, message);
-					memset(buf_3, 0, BUF_LEN);
+					memset(m_client.m_chatActivity.GetChatBufRef(otherID), 0, BUF_LEN);
 				}
-				
+
 				if (ImGui::Button("End Chat"))
 				{
 					m_client.m_chatActivity.EndChat(otherID);
@@ -249,7 +246,7 @@ void NetworkingLobbyScene::GUI()
 
 				ImGui::End();
 			}
-			
+
 		}
 	}
 

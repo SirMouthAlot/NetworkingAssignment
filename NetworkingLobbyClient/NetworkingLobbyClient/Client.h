@@ -29,7 +29,8 @@ enum class MessageFlags
 
 struct ChatActivity
 {
-	ChatActivity() { }
+	ChatActivity() 
+	{ }
 
 	void AddNew(int chatID, std::string chatName)
 	{
@@ -39,6 +40,9 @@ struct ChatActivity
 			currentlyChatting.insert(std::pair<int, bool>(chatID, false));
 			requestsSent.insert(std::pair<int, bool>(chatID, false));
 			requestsReceived.insert(std::pair<int, bool>(chatID, false));
+			chatBoxBuf.insert(std::pair<int, char*>(chatID, new char[BUF_LEN]));
+
+			memset(chatBoxBuf.at(chatID), 0, BUF_LEN);
 
 			std::vector<std::string> newLog;
 			chatLogs.insert(std::pair<int, std::vector<std::string>>(chatID, newLog));
@@ -49,6 +53,8 @@ struct ChatActivity
 	{
 		if (!(chatLogs.find(chatID) == chatLogs.end()))
 		{
+			memset(chatBoxBuf.at(chatID), 0, BUF_LEN);
+			chatBoxBuf.erase(chatID);
 			chatBoxName.erase(chatID);
 			currentlyChatting.erase(chatID);
 			requestsSent.erase(chatID);
@@ -222,11 +228,29 @@ struct ChatActivity
 		}
 	}
 
+	char* GetChatBufRef(int chatID)
+	{
+		if (!(chatLogs.find(chatID) == chatLogs.end()))
+		{
+			//return chat name
+			return chatBoxBuf.at(chatID);
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	
+	std::unordered_map<int, char*> chatBoxBuf;
 	std::unordered_map<int, std::string> chatBoxName;
 	std::unordered_map<int, bool> currentlyChatting;
 	std::unordered_map<int, bool> requestsSent;
 	std::unordered_map<int, bool> requestsReceived;
 	std::unordered_map<int, std::vector<std::string>> chatLogs;
+
+	private:
+		unsigned int BUF_LEN = 512;
 };
 
 struct PrintActivity
