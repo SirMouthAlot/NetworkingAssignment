@@ -141,6 +141,7 @@
     <ClInclude Include="BloomEffect.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraSystem.h" />
+    <ClInclude Include="ChatActivity.h" />
     <ClInclude Include="ChatData.h" />
     <ClInclude Include="Client.h" />
     <ClInclude Include="ClientData.h" />
@@ -150,6 +151,8 @@
     <ClInclude Include="EntityIdentifier.h" />
     <ClInclude Include="Framebuffer.h" />
     <ClInclude Include="Game.h" />
+    <ClInclude Include="GameActivity.h" />
+    <ClInclude Include="GameData.h" />
     <ClInclude Include="GrainEffect.h" />
     <ClInclude Include="GreyscaleEffect.h" />
     <ClInclude Include="HorizontalScroll.h" />
@@ -172,6 +175,7 @@
     <ClInclude Include="PixelateEffect.h" />
     <ClInclude Include="PostEffect.h" />
     <ClInclude Include="RenderingSystem.h" />
+    <ClInclude Include="RequestResponse.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneEditor.h" />
     <ClInclude Include="Selectable.h" />
@@ -200,6 +204,7 @@
     <ClCompile Include="BloomEffect.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraSystem.cpp" />
+    <ClCompile Include="ChatActivity.cpp" />
     <ClCompile Include="ChatData.cpp" />
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="ClientData.cpp" />
@@ -208,6 +213,8 @@
     <ClCompile Include="EntityIdentifier.cpp" />
     <ClCompile Include="Framebuffer.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="GameActivity.cpp" />
+    <ClCompile Include="GameData.cpp" />
     <ClCompile Include="GrainEffect.cpp" />
     <ClCompile Include="GreyscaleEffect.cpp" />
     <ClCompile Include="HorizontalScroll.cpp" />
@@ -229,6 +236,7 @@
     <ClCompile Include="PixelateEffect.cpp" />
     <ClCompile Include="PostEffect.cpp" />
     <ClCompile Include="RenderingSystem.cpp" />
+    <ClCompile Include="RequestResponse.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="SceneEditor.cpp" />
     <ClCompile Include="Selectable.cpp" />

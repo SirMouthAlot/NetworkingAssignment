@@ -75,12 +75,12 @@ void Server::RecvMsg()
 		}
 		else
 		{
-			char messMess[30];
-			memset(messMess, 0, 30);
+			char username[30];
+			memset(username, 0, 30);
 
 			int messFlag;
-			sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
-			std::string temp = std::string(messMess);
+			sscanf_s(mess.c_str(), "%i %s %i", &messType, username, 30, &messFlag);
+			std::string temp = std::string(username);
 			temp.shrink_to_fit();
 
 			client->m_username = temp;
@@ -153,7 +153,7 @@ void Server::RecvMsg()
 		for (int i = 0; i < m_clients.size(); i++)
 		{
 			if (m_clients[i]->m_clientID == requesterID)
-				SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(chatID, (bool)response), *m_clients[i]);
+				SendMsg(MessageType::MSG_CHATRESPONSE, &Response(chatID, (bool)response), *m_clients[i]);
 		}
 
 		break;
@@ -161,11 +161,11 @@ void Server::RecvMsg()
 	case MessageType::MSG_CHATSTRING:
 	{
 		int chatID;
-		char messMess[256];
-		memset(messMess, 0, 256);
+		char theMessage[256];
+		memset(theMessage, 0, 256);
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %i %[^\n]s %i", &messType, &chatID, messMess, 256, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %[^\n]s %i", &messType, &chatID, theMessage, 256, &messFlag);
 
 
 		bool trash;
@@ -175,43 +175,65 @@ void Server::RecvMsg()
 		for (int i = 0; i < m_clients.size(); i++)
 		{
 			if (m_clients[i]->m_clientID == chatID)
-				SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(requesterID, messMess), *m_clients[i]);
+				SendMsg(MessageType::MSG_CHATSTRING, &ChatMessage(requesterID, theMessage), *m_clients[i]);
 		}
 
 		break;
 	}
-	/*case MessageType::MSG_GAMEREQUEST:
+	case MessageType::MSG_GAMEREQUEST:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
-
+		int idRequest;
+		int idGame;
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, &idRequest, &idGame, &messFlag);
+
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == idGame)
+				SendMsg(MessageType::MSG_GAMEREQUEST, &Int(idRequest), *m_clients[i]);
+		}
 
 		break;
 	}
 	case MessageType::MSG_GAMERESPONSE:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
+		int requesterID;
+		int response;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, &requesterID, &response, &messFlag);
+		bool trash;
 
+		int chatID = FindClient(&Client(clientAddr), trash);
 
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == requesterID)
+				SendMsg(MessageType::MSG_GAMERESPONSE, &Response(chatID, (bool)response), *m_clients[i]);
+		}
 
 		break;
 	}
 	case MessageType::MSG_GAMEPOSITION:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
+		float x, y, z;
+		int chatID;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %f %f %f %i", &messType, &chatID, &x, &y, &z, &messFlag);
+
+		bool trash;
+
+		int requesterID = FindClient(&Client(clientAddr), trash);
+
+		for (int i = 0; i < m_clients.size(); i++)
+		{
+			if (m_clients[i]->m_clientID == chatID)
+				SendMsg(MessageType::MSG_GAMEPOSITION, &GamePosition(requesterID, Vector3(x, y, z)), *m_clients[i]);
+		}
 
 		break;
-	}*/
+	}
 	}
 
 	if ((MessageType)messType == MessageType::MSG_CONNECT && !onList)

@@ -114,6 +114,8 @@ Convertable* Client::RecvMsg(MessageType& type)
 		//Adds new client
 		m_otherClients.push_back(newClient);
 
+		m_chatActivity.AddNew(newClient.m_clientID, newClient.m_username);
+
 		return nullptr;
 
 		break;
@@ -127,12 +129,9 @@ Convertable* Client::RecvMsg(MessageType& type)
 
 		sscanf_s(mess.c_str(), "%i %i %s", &messType, &temp, name, 90);
 
-		std::string str = std::to_string(temp);
-		str += " ";
-		str += std::string(name);
 
-		ClientData data;
-		data.SetValue(str);
+		std::string tempName = name;
+		ClientData data = ClientData(temp, tempName);
 
 		for (int i = 0; i < m_otherClients.size(); i++)
 		{
@@ -141,6 +140,8 @@ Convertable* Client::RecvMsg(MessageType& type)
 				//Removes client
 				m_otherClients.erase(m_otherClients.begin() + i);
 				m_otherClients.shrink_to_fit();
+
+				m_chatActivity.Remove(data.m_userNum);
 			}
 		}
 
@@ -170,7 +171,7 @@ Convertable* Client::RecvMsg(MessageType& type)
 		sscanf_s(mess.c_str(), "%i %i %i", &messType, &chatID, &response);
 
 		//Mess mess2 is the actual response to the request
-		return new ChatResponse(chatID, (bool)response);
+		return new Response(chatID, (bool)response);
 
 		break;
 	}
@@ -187,38 +188,44 @@ Convertable* Client::RecvMsg(MessageType& type)
 
 		break;
 	}
-	/*case MessageType::MSG_GAMEREQUEST:
+	case MessageType::MSG_GAMEREQUEST:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
+		int requesterID;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i", &messType, &requesterID);
+
+		//Mess mess is the ID of the client that requested the chat
+		return new Int(requesterID);
 
 		break;
 	}
 	case MessageType::MSG_GAMERESPONSE:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
+		int chatID;
+		int response;
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %i %i %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %i", &messType, &chatID, &response);
 
-
+		//Mess mess2 is the actual response to the request
+		return new Response(chatID, (bool)response);
 
 		break;
 	}
 	case MessageType::MSG_GAMEPOSITION:
 	{
-		char messMess[30];
-		memset(messMess, 0, 30);
+		float x, y, z;
+		int chatID;
+
 
 		int messFlag;
-		sscanf_s(mess.c_str(), "%i %s %i", &messType, messMess, 30, &messFlag);
+		sscanf_s(mess.c_str(), "%i %i %f %f %f %i", &messType, &chatID, &x, &y, &z, &messFlag);
 
+
+		return new GamePosition(chatID, Vector3(x, y, z));
 		break;
-	}*/
+	}
 	}
 }
 

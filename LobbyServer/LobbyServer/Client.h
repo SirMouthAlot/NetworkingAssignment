@@ -3,6 +3,8 @@
 
 #include "NetworkingWrapper.h"
 #include <unordered_map>
+#include "ChatActivity.h"
+#include "GameActivity.h"
 
 enum class MessageType
 {
@@ -25,37 +27,6 @@ enum class MessageFlags
 	BROADCAST_ALL,			//Broadcast to all clients connected to the server
 	BROADCAST_RELATED,		//Broadcast to only clients grouped with this client
 	NONE					//Do nothing
-};
-
-struct ChatActivity
-{
-	ChatActivity() { }
-
-	void SendRequest(int chatID)
-	{
-		//If you can't find the chat id in our list
-		if (chatLogs.find(chatID) == chatLogs.end())
-		{
-			requestsRejected.insert(std::pair<int, bool>(chatID, false));
-			requestsAccepted.insert(std::pair<int, bool>(chatID, false));
-			requestsSent.insert(std::pair<int, bool>(chatID, true));
-			requestsReceived.insert(std::pair<int, bool>(chatID, false));
-
-			std::vector<std::string> newLog;
-			chatLogs.insert(std::pair<int, std::vector<std::string>>(chatID, newLog));
-		}
-	}
-
-	void ReceiveRequest(int chatID)
-	{
-
-	}
-
-	std::unordered_map<int, bool> requestsRejected;
-	std::unordered_map<int, bool> requestsAccepted;
-	std::unordered_map<int, bool> requestsSent;
-	std::unordered_map<int, bool> requestsReceived;
-	std::unordered_map<int, std::vector<std::string>> chatLogs;
 };
 
 struct PrintActivity
@@ -126,6 +97,8 @@ public:
 
 
 
+	ChatActivity m_chatActivity;
+	GameActivity m_gameActivity;
 
 	int m_clientID = -1;
 	std::string m_username;

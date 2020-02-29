@@ -76,7 +76,7 @@ void NetworkingLobbyScene::ReceiveMessages()
 			}
 			else if (type == MessageType::MSG_CHATRESPONSE)
 			{
-				ChatResponse tempResponse = *(ChatResponse*)temp;
+				Response tempResponse = *(Response*)temp;
 
 				bool response = tempResponse.m_response;
 				int chatID = tempResponse.m_requesterID;
@@ -90,6 +90,32 @@ void NetworkingLobbyScene::ReceiveMessages()
 				int chatID = tempMessage.m_chatID;
 
 				m_client.m_chatActivity.ReceiveMessage(chatID, tempMessage.m_message);
+			}
+			else if (type == MessageType::MSG_GAMEREQUEST)
+			{
+				Int tempInt = *(Int*)temp;
+
+				int gameID = tempInt.m_int;
+
+				m_client.m_gameActivity.ReceiveRequest(gameID);
+			}
+			else if (type == MessageType::MSG_GAMERESPONSE)
+			{
+				Response tempResponse = *(Response*)temp;
+
+				bool response = tempResponse.m_response;
+				int gameID = tempResponse.m_requesterID;
+
+				m_client.m_gameActivity.ReceiveResponse(gameID, response);
+			}
+			else if (type == MessageType::MSG_GAMEPOSITION)
+			{
+				GamePosition tempPosition = *(GamePosition*)temp;
+
+				int gameID = tempPosition.m_chatID;
+				Vector3 position = tempPosition.m_position;
+
+				m_client.m_gameActivity.ReceivePosition(gameID, position);
 			}
 		}
 	}
@@ -161,28 +187,27 @@ void NetworkingLobbyScene::GUI()
 			int otherID = m_client.m_otherClients[i].m_clientID;
 
 			std::string chatTitle = (m_client.m_chatActivity.GetRequestSent(otherID)) ? "Request Sent" : "Chat";
-			std::string gameTitle = (m_gameRequestSent) ? "Request Sent" : "Game";
-
+			std::string gameTitle = (m_client.m_gameActivity.GetRequestSent(otherID)) ? "Request Sent" : "Game";
 
 			//Prints out client and username
 			ImGui::Text("Client %i : %s %s", m_client.m_otherClients[i].m_clientID, m_client.m_otherClients[i].m_username.c_str(), PrintActivity::Return(m_client.m_otherClients[i].m_activity).c_str());
-			ImGui::SameLine();
+			
 			//Did you receive a chat request?
 			if (m_client.m_chatActivity.GetRequestReceived(otherID))
 			{
 				ImGui::SameLine();
-				if (ImGui::Button("Accept Request"))
+				if (ImGui::Button(std::string("Accept Request ##" + std::to_string(i)).c_str()))
 				{
 					//Send accept response
-					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(otherID, true), MessageFlags::NONE);
+					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &Response(otherID, true), MessageFlags::NONE);
 
 					m_client.m_chatActivity.RespondRequest(otherID, true);
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Reject Request"))
+				if (ImGui::Button(std::string("Reject Request ##" + std::to_string(i)).c_str()))
 				{
 					//Send reject response
-					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &ChatResponse(otherID, false), MessageFlags::NONE);
+					m_client.SendMsg(MessageType::MSG_CHATRESPONSE, &Response(otherID, false), MessageFlags::NONE);
 
 					m_client.m_chatActivity.RespondRequest(otherID, false);
 				}
@@ -191,12 +216,13 @@ void NetworkingLobbyScene::GUI()
 			{
 				if (!m_client.m_chatActivity.GetCurrentlyChatting(otherID))
 				{
+					ImGui::SameLine();
 					if (ImGui::Button(std::string(chatTitle + "##" + std::to_string(i)).c_str()))
 					{
 						if (!m_client.m_chatActivity.GetRequestSent(otherID))
 						{
 							//Sends a chat request
-							m_client.SendMsg(MessageType::MSG_CHATREQUEST, &ChatRequest(m_client.m_clientID, otherID), MessageFlags::NONE);
+							m_client.SendMsg(MessageType::MSG_CHATREQUEST, &Request(m_client.m_clientID, otherID), MessageFlags::NONE);
 
 							//Send chat request
 							m_client.m_chatActivity.SendRequest(otherID);
@@ -205,13 +231,43 @@ void NetworkingLobbyScene::GUI()
 				}
 			}
 
-			ImGui::SameLine();
-			//Game request stuffs
-			if (ImGui::Button(gameTitle.c_str()))
+			
+			//Did you receive a game request?
+			if (m_client.m_gameActivity.GetRequestReceived(otherID))
 			{
-				if (!m_gameRequestSent)
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Accept Request ##" + std::to_string(i)).c_str()))
 				{
-					m_gameRequestSent = true;
+					//Send accept response
+					m_client.SendMsg(MessageType::MSG_GAMERESPONSE, &Response(otherID, true), MessageFlags::NONE);
+
+					m_client.m_gameActivity.RespondRequest(otherID, true);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Reject Request ##" + std::to_string(i)).c_str()))
+				{
+					//Send reject response
+					m_client.SendMsg(MessageType::MSG_GAMERESPONSE, &Response(otherID, false), MessageFlags::NONE);
+
+					m_client.m_gameActivity.RespondRequest(otherID, false);
+				}
+			}
+			else
+			{
+				if (!m_client.m_gameActivity.GetCurrentlyGaming(otherID))
+				{
+					ImGui::SameLine();
+					if (ImGui::Button(std::string(gameTitle + "##" + std::to_string(i)).c_str()))
+					{
+						if (!m_client.m_gameActivity.GetRequestSent(otherID))
+						{
+							//Sends a chat request
+							m_client.SendMsg(MessageType::MSG_GAMEREQUEST, &Request(m_client.m_clientID, otherID), MessageFlags::NONE);
+
+							//Send chat request
+							m_client.m_gameActivity.SendRequest(otherID);
+						}
+					}
 				}
 			}
 
@@ -221,7 +277,7 @@ void NetworkingLobbyScene::GUI()
 			{
 				bool chatting = m_client.m_chatActivity.GetCurrentlyChatting(otherID);
 				//Create chat window
-				ImGui::Begin(m_client.m_chatActivity.GetChatName(otherID).c_str(), &chatting);
+				ImGui::Begin((m_client.m_chatActivity.GetChatName(otherID) + "##" + std::to_string(i)).c_str(), &chatting);
 
 				for (int i = 0; i < m_client.m_chatActivity.GetChatLog(otherID).size(); i++)
 				{
@@ -245,6 +301,56 @@ void NetworkingLobbyScene::GUI()
 				if (ImGui::Button("End Chat"))
 				{
 					m_client.m_chatActivity.EndChat(otherID);
+				}
+
+				ImGui::End();
+			}
+
+			//Create game window
+			if (m_client.m_gameActivity.GetCurrentlyGaming(otherID))
+			{
+				bool gaming = m_client.m_gameActivity.GetCurrentlyGaming(otherID);
+				//Create chat window
+				ImGui::Begin((m_client.m_gameActivity.GetGameName(otherID) + "##" + std::to_string(i)).c_str(), &gaming);
+
+				//Create control scheme
+				if (ImGui::Button(std::string("Up##" + std::to_string(i)).c_str()))
+				{
+					m_client.m_gamePosition.y += 1.f;
+					m_client.SendMsg(MessageType::MSG_GAMEPOSITION, &GamePosition(otherID, m_client.m_gamePosition), MessageFlags::NONE);
+				}
+
+				if (ImGui::Button(std::string("Left##" + std::to_string(i)).c_str()))
+				{
+					m_client.m_gamePosition.x -= 1.f;
+					m_client.SendMsg(MessageType::MSG_GAMEPOSITION, &GamePosition(otherID, m_client.m_gamePosition), MessageFlags::NONE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Down##" + std::to_string(i)).c_str()))
+				{
+					m_client.m_gamePosition.y -= 1.f;
+					m_client.SendMsg(MessageType::MSG_GAMEPOSITION, &GamePosition(otherID, m_client.m_gamePosition), MessageFlags::NONE);
+				}
+				ImGui::SameLine();
+				if (ImGui::Button(std::string("Right##" + std::to_string(i)).c_str()))
+				{
+					m_client.m_gamePosition.x += 1.f;
+					m_client.SendMsg(MessageType::MSG_GAMEPOSITION, &GamePosition(otherID, m_client.m_gamePosition), MessageFlags::NONE);
+				}
+
+				Vector3 position = m_client.m_gamePosition;
+				ImGui::Text("Your Position: %f %f %f", position.x, position.y, position.z);
+
+				ImGui::Separator();
+
+				Vector3 otherPosition = m_client.m_gameActivity.GetCurrentPosition(otherID);
+				ImGui::Text("Other Position: %f %f %f", otherPosition.x, otherPosition.y, otherPosition.z);
+
+				ImGui::Separator();
+
+				if (ImGui::Button("End Game"))
+				{
+					m_client.m_gameActivity.EndGame(otherID);
 				}
 
 				ImGui::End();

@@ -12,6 +12,8 @@
 #include "Vector.h"
 #include "ClientData.h"
 #include "ChatData.h"
+#include "GameData.h"
+#include "RequestResponse.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 
